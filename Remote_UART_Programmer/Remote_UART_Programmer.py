@@ -8,7 +8,7 @@
 
 from intelhex import IntelHex16bit
 import argparse
-import serial
+#import serial
 import sys
 import enum
 import crc8
@@ -17,11 +17,7 @@ from binascii import hexlify
 p = '/dev/ttyACM0'
 
 SequenceNum = {
-    'km_west'       : '000',
-    'km_east'       : '000',
-    'pic32'         : '000',
-    'read_mode'     : '000',
-    'write_mode'    : '000'
+    'seq_num' : '000'
 }
 
 def GetCommand(seq_num, command, fields):
@@ -39,7 +35,7 @@ def GetCommand(seq_num, command, fields):
     
     seq_num = str(int(seq_num) + 1)
     seq_num = '{:03d}'.format(int(seq_num))
-    SequenceNum[fields[0]] = seq_num 
+    SequenceNum['seq_num'] = seq_num 
      
     crc = crc8.crc8()
     crc.update(string_hex.encode())
@@ -88,9 +84,10 @@ def readCode(args):
     #port = connect()
     chip_fields = [args.chip]
     read_fields = ['read_mode']
-    chip_command = GetCommand(SequenceNum[args.chip], 'S', chip_fields)
-    read_command = GetCommand(SequenceNum['read_mode'], 'S', read_fields)
-    BLCommand(port, chip_command, read_command)
+    chip_command = GetCommand(SequenceNum['seq_num'], 'S', chip_fields)
+    read_command = GetCommand(SequenceNum['seq_num'], 'S', read_fields)
+    print(chip_command, read_command)
+    #BLCommand(port, chip_command, read_command)
 
 def writeCode(args):
     print('In the write')
