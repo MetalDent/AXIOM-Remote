@@ -1,7 +1,9 @@
 ###########################################################################
+
 ###     Host PC script to update or read data from the microcontrollers 
  
 ###     Copyright (C) 2020 Priya Pandya <priyapandya274@gmail.com> 
+
 ###########################################################################
 
 from intelhex import IntelHex16bit
@@ -12,14 +14,16 @@ import enum
 
 p = '/dev/ttyACM0'
 
-class Chip(enum.Enum):
-    KM_Wast = 'S123E9 chip 1'
-    KM_East = 'S123E9 chip 2'
-    PIC32 = 'S123E9 chip 3'
+Chip = {
+    'KM_Wast' : 'S123E9 chip 1',
+    'KM_East' : 'S123E9 chip 2',
+    'PIC32' : 'S123E9 chip 3'
+}
 
-class BootloaderCommands(enum.Enum):
-    read_mode = 'G123DD read_data'
-    write_mode = 'S124EA write_data'
+BootloaderCommands = {
+    'read_mode' : 'G123DD read_data',
+    'write_mode' : 'S124EA write_data'
+}
 
 def connect():
     try:
@@ -57,26 +61,24 @@ def parseFile(hexFile):
 def showVersion():
     print('In the version')
     
-def readCode():
+def readCode(args):
     print('In the read')
     port = connect()
-    select_chip = args.chip
-    BLCommand(port, Chip.select_chip.value, BootloaderCommands.read_mode.value)
+    BLCommand(port, Chip[args.chip], BootloaderCommands['read_mode'])
 
-def writeCode():
+def writeCode(args):
     print('In the write')
-    data = parseFile(args.Hex)
+    data = parseFile(args.hex)
     port = connect()
-    select_chip = args.chip
-    BLCommand(port, Chip.select_chip.value, BootloaderCommands.write_mode.value)
+    BLCommand(port, Chip[args.chip], BootloaderCommands['write_mode'])
 
 def call(args):
     if args.version:
         showVersion()
     if args.read:
-        readCode()
+        readCode(args)
     if args.write:
-        writeCode()
+        writeCode(args)
 
 def main():
     parser = argparse.ArgumentParser(prog='Remote_UART_Programmer', description='Commands for Remote_UART_Programmer')     #change it to something appropriate
