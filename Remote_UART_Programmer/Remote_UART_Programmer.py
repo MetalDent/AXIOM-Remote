@@ -15,14 +15,14 @@ import enum
 p = '/dev/ttyACM0'
 
 Chip = {
-    'KM_Wast' : 'S123E9 chip 1',
-    'KM_East' : 'S123E9 chip 2',
-    'PIC32' : 'S123E9 chip 3'
+    'KM_West' : 'S161DD1Echip1E11E04',
+    'KM_East' : 'S162601Echip1E21E04',
+    'PIC32' : 'S3210B1Echip1E31E04'
 }
 
 BootloaderCommands = {
-    'read_mode' : 'G123DD read_data',
-    'write_mode' : 'S124EA write_data'
+    'read_mode' : 'G2733A1Eread_data1E04',
+    'write_mode' : 'S275651Ewrite_data1E04'
 }
 
 def connect():
