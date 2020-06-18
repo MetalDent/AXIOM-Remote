@@ -11,19 +11,41 @@ import argparse
 import serial
 import sys
 import enum
+import crc8
+from binascii import hexlify
 
 p = '/dev/ttyACM0'
 
-Chip = {
-    'KM_West' : 'S161DD1Echip1E11E04',
-    'KM_East' : 'S162601Echip1E21E04',
-    'PIC32' : 'S3210B1Echip1E31E04'
+SequenceNum = {
+    'km_west'       : '000',
+    'km_east'       : '000',
+    'pic32'         : '000',
+    'read_mode'     : '000',
+    'write_mode'    : '000'
 }
 
-BootloaderCommands = {
-    'read_mode' : 'G2733A1Eread_data1E04',
-    'write_mode' : 'S275651Ewrite_data1E04'
-}
+def GetCommand(seq_num, command, fields):
+    RS = '1e'
+    EOT = '04'
+    string = ''
+    string_hex = ''
+    for val in fields:
+        string += RS
+        string_hex += RS
+        string += val
+        string_hex += hexlify(val.encode()).decode()
+    string += RS + EOT
+    string_hex += RS + EOT
+    
+    seq_num = str(int(seq_num) + 1)
+    seq_num = '{:03d}'.format(int(seq_num))
+    SequenceNum[fields[0]] = seq_num 
+     
+    crc = crc8.crc8()
+    crc.update(string_hex.encode())
+     
+    final_command = command + seq_num + crc.hexdigest() + string
+    return final_command
 
 def connect():
     try:
@@ -40,7 +62,7 @@ def read_port(port):
 def write_port(port, data):
     port.write(data)
 
-def BLCommand(port, chip, mode):
+def BLCommand(port, chip_cmd, mode_cmd):
     write_port(port, chip)
     ack = read_port(port)
     if ack == 'ACK':
@@ -63,8 +85,12 @@ def showVersion():
     
 def readCode(args):
     print('In the read')
-    port = connect()
-    BLCommand(port, Chip[args.chip], BootloaderCommands['read_mode'])
+    #port = connect()
+    chip_fields = [args.chip]
+    read_fields = ['read_mode']
+    chip_command = GetCommand(SequenceNum[args.chip], 'S', chip_fields)
+    read_command = GetCommand(SequenceNum['read_mode'], 'S', read_fields)
+    BLCommand(port, chip_command, read_command)
 
 def writeCode(args):
     print('In the write')
@@ -84,7 +110,7 @@ def main():
     parser = argparse.ArgumentParser(prog='Remote_UART_Programmer', description='Commands for Remote_UART_Programmer')     #change it to something appropriate
     parser.add_argument('--dest', metavar='path', type=str, help='the destination path')
     parser.add_argument('--hex', metavar='path', type=str, help='the hex file path')
-    parser.add_argument('--chip', type=str, help='Key Manager to be selected for flashing of the hex', choices=['KM_West', 'KM_East', 'PIC32'], nargs='?')
+    parser.add_argument('--chip', type=str, help='Key Manager to be selected for flashing of the hex', choices=['km_west', 'km_east', 'pic32'], nargs='?')
     parser.add_argument('-v', '--version', action='store_true', help='display the versions')
     parser.add_argument('-r', '--read', action='store_true', help='read the code back from the PIC memory')
     parser.add_argument('-w', '--write', action='store_true', help='write the hex code in the PIC memory')
