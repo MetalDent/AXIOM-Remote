@@ -8,7 +8,7 @@
 
 from intelhex import IntelHex16bit
 import argparse
-#import serial
+import serial
 import sys
 import enum
 import crc8
@@ -81,13 +81,13 @@ def showVersion():
     
 def readCode(args):
     print('In the read')
-    #port = connect()
+    port = connect()
     chip_fields = [args.chip]
     read_fields = ['read_mode']
     chip_command = GetCommand(SequenceNum['seq_num'], 'S', chip_fields)
     read_command = GetCommand(SequenceNum['seq_num'], 'S', read_fields)
     print(chip_command, read_command)
-    #BLCommand(port, chip_command, read_command)
+    BLCommand(port, chip_command, read_command)
 
 def writeCode(args):
     print('In the write')
