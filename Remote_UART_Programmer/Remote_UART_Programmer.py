@@ -8,16 +8,15 @@
 
 from intelhex import IntelHex16bit
 import argparse
-import serial
+#import serial
 import sys
-import enum
 import crc8
 from binascii import hexlify
 
 p = '/dev/ttyACM0'
 
 SequenceNum = {
-    'seq_num' : '000'
+    'seq_num' : 000
 }
 
 def GetCommand(seq_num, command, fields):
@@ -33,9 +32,9 @@ def GetCommand(seq_num, command, fields):
     string += RS + EOT
     string_hex += RS + EOT
     
-    seq_num = str(int(seq_num) + 1)
-    seq_num = '{:03d}'.format(int(seq_num))
-    SequenceNum['seq_num'] = seq_num 
+    seq_num += 1
+    seq_num = '{:03d}'.format(seq_num)
+    SequenceNum['seq_num'] = int(seq_num) 
      
     crc = crc8.crc8()
     crc.update(string_hex.encode())
@@ -81,13 +80,13 @@ def showVersion():
     
 def readCode(args):
     print('In the read')
-    port = connect()
+    #port = connect()
     chip_fields = [args.chip]
     read_fields = ['read_mode']
     chip_command = GetCommand(SequenceNum['seq_num'], 'S', chip_fields)
     read_command = GetCommand(SequenceNum['seq_num'], 'S', read_fields)
     print(chip_command, read_command)
-    BLCommand(port, chip_command, read_command)
+    #BLCommand(port, chip_command, read_command)
 
 def writeCode(args):
     print('In the write')
