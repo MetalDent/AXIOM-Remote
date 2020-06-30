@@ -733,6 +733,57 @@ void usb_reset(void)
     EP0_STATE(S_RESET);
 }
 
+# define my_sizeof(type) ((char *)(&type+1)-(char*)(&type))
+
+void ProcessCommand(volatile uint8_t *command, int size, USBCDCDevice& usbDevice)
+{
+    uint8_t opr, seq_num[3], crc[2], fields[size - 7];
+    
+    for(int i = 0 ; i < size ; i++)
+    {
+        if(command[i] == '1' && command[i + 1] == 'e')          // RS
+        {
+            i++;
+            continue;
+        }
+        
+        else if(command[i] == '0' && command[i + 1] == '4')     // EOT
+        {
+            break;
+        }
+        
+        else if(i < 1)                                          // Command : S or G
+        {
+            opr = command[i];
+        }
+        
+        else if(i < 4)                                          // Sequence number
+        {
+            seq_num[i - 1] = command[i];
+        }
+        
+        else if(i < 6)                                          // CRC8
+        {
+            crc[i - 4] = command[i];
+        }
+        
+        else                                                    // Fields
+        {
+            fields[i - 6] = command[i];
+        }
+        
+    }
+    
+    usbDevice.Send((uint8_t*)"a", 3);
+}
+
+void (*Callback)(volatile uint8_t *command, int size, USBCDCDevice& usbDevice) = nullptr;
+
+void SetCallback(void (*callback)(volatile uint8_t *command, int size, USBCDCDevice& usbDevice))
+{
+    Callback = callback;
+}
+
 extern "C" void __ISR(_USB_VECTOR, IPL7SRS) USB_ISR(void)
 {
     uint32_t csr0 = USBCSR0;
@@ -763,13 +814,24 @@ extern "C" void __ISR(_USB_VECTOR, IPL7SRS) USB_ISR(void)
     /* Endpoint 2 RX Interrupt Handler */
     if (csr1 & _USBCSR1_EP2RXIF_MASK)
     { // Endpoint 2 Receive
-        usb_ep2_rx();
-        buf_ch('*');
-        buf_word(ep2rbc);
-        buf_ch('*');
-        /* for (int i=0; i<ep2rbc; i++)
-            loop_ch(ep2data[i]); */
-        loop_ch(ep2data[0]);
+        if(Callback != nullptr)
+        {   
+            usb_ep2_rx();
+            buf_ch('*');
+            buf_word(ep2rbc);
+            buf_ch('*');
+            /* for (int i=0; i<ep2rbc; i++)
+                loop_ch(ep2data[i]); */
+            loop_ch(ep2data[0]);
+            
+            int size = my_sizeof(ep2data)/my_sizeof(ep2data[0]);
+            
+            SetCallback(ProcessCommand);
+            USBCDCDevice usb;
+            Callback(ep2data, size, usb);
+        }
+        
+        Callback = nullptr;
     }
 
     /* Endpoint 3 TX Interrupt Handler */
@@ -835,5 +897,5 @@ void USBCDCDevice::Send(uint8_t *data, uint16_t length)
 {
     ep3tbc = length;
     ep3ptr = data;
-    usb_ep3_tx();
+    usb_ep3_tx();   
 }
