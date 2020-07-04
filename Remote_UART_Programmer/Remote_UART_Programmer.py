@@ -6,37 +6,34 @@
 
 ###########################################################################
 
-from intelhex import IntelHex16bit
-import argparse
-import serial
-import sys
-import crc8
-from binascii import hexlify
+from intelhex import IntelHex16bit      # read hex file
+import argparse                         # create commandline arguments
+import serial                           # connect to serial port
+import sys                              # sys.exit()
+import crc8                             # calculation of CRC8
+from curses import ascii                # values of RS and EOT
 
 SequenceNum = {
     'seq_num' : 000
 }
 
+RS = hex(ascii.RS)
+EOT = hex(ascii.EOT)
+
 def GetCommand(seq_num, command, fields):
-    RS = '1e'
-    EOT = '04'
     string = ''
-    string_hex = ''
     for val in fields:
         string += RS
-        string_hex += RS
         string += val
-        string_hex += hexlify(val.encode()).decode()
-    string += RS + EOT
-    string_hex += RS + EOT
+    string += EOT
     
     seq_num += 1
     seq_num = '{:03d}'.format(seq_num)
     SequenceNum['seq_num'] = int(seq_num) 
      
     crc = crc8.crc8()
-    crc.update(string_hex.encode())
-     
+    crc.update(string.encode())
+         
     final_command = command + seq_num + crc.hexdigest() + string
     return final_command
 
@@ -50,13 +47,15 @@ def connect(p):
         sys.exit('Error! ' + str(e))
 
 def read_port(port):
-    print(port.readlines())
+    print(port.readline())
 
 def write_port(port, data):
     port.write(data.encode())
 
 def BLCommand(port, chip_cmd, mode_cmd):
     write_port(port, chip_cmd)
+    read_port(port)
+    
     '''
     ack = read_port(port)
     if ack == 'ACK':
@@ -80,7 +79,7 @@ def showVersion():
     
 def readCode(args):
     print('In the read')
-    port = connect(args.dest)
+    port = connect(args.port)
     chip_fields = [args.chip]
     read_fields = ['read_mode']
     chip_command = GetCommand(SequenceNum['seq_num'], 'S', chip_fields)
@@ -91,7 +90,7 @@ def readCode(args):
 def writeCode(args):
     print('In the write')
     data = parseFile(args.hex)
-    port = connect(args.dest)
+    port = connect(args.port)
     #BLCommand(port, Chip[args.chip], BootloaderCommands['write_mode'])
 
 def call(args):
@@ -104,7 +103,7 @@ def call(args):
 
 def main():
     parser = argparse.ArgumentParser(prog='Remote_UART_Programmer', description='Commands for Remote_UART_Programmer')     #change it to something appropriate
-    parser.add_argument('--dest', metavar='path', type=str, help='the destination path')
+    parser.add_argument('--port', metavar='path', type=str, help='the destination path')
     parser.add_argument('--hex', metavar='path', type=str, help='the hex file path')
     parser.add_argument('--chip', type=str, help='Key Manager to be selected for flashing of the hex', choices=['km_west', 'km_east', 'pic32'], nargs='?')
     parser.add_argument('-v', '--version', action='store_true', help='display the versions')
