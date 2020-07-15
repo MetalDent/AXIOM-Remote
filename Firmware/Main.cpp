@@ -5,6 +5,7 @@
 #include "../Bootloader/Periphery/ILI9341/ILI9341Device.h"
 #include "../Bootloader/Periphery/USB/USBCDCDevice.h"
 #include "../Bootloader/Periphery/I2C/I2C.h"
+#include "../Bootloader/Periphery/ICSP/ICSProgrammer.h""
 
 // Menus/Pages
 #include "UI/MenuSystem.h"
@@ -27,6 +28,8 @@
 // Defined in procdefs.ld
 volatile extern uint16_t framebuffer[ILI9341_TFTWIDTH * ILI9341_TFTHEIGHT];
 ILI9341Display display(framebuffer);
+
+#include "CRC8.cpp"
 
 void ConfigGPIO()
 {
@@ -153,18 +156,14 @@ int8_t PollKMW(USBCDCDevice* cdcDevice)
     if (data[1] != knob_position[1])
     {
         int8_t diff = data[1] - knob_position[1];
-
         knob_position[1] = data[1];
-
         if (DEBUG)
         {
             sprintf(debugText, "Knob E2: %d \r\n", knob_position[1]);
             cdcDevice->Send((uint8_t*)debugText, 32);
-
             sprintf(debugText, "diff E2: %d \r\n", diff);
             cdcDevice->Send((uint8_t*)debugText, 32);
         }
-
         return diff;
     }*/
     return 0;
@@ -531,12 +530,137 @@ void init_uart2()
     irq_enable();
 }
 
+USBCDCDevice cdcDevice;
+ICSProgrammer icsp;
+CRC8 getCRC;
+char outputBuffer[128];
+uint8_t remoteSequenceNo = (uint8_t)'\x30';
+
+void GetKMData()
+{
+    icsp.EnterLVP();
+    icsp.SendCommand(ICSPCommand::LoadConfiguration, 1);
+    uint16_t address = 0x8000;
+
+    for (int i = 0; i < 30; i++)
+    {
+        uint16_t value = icsp.Receive();
+        sprintf(outputBuffer, "Address: 0x%.8X, value/dec: %u, value/hex: 0x%X\r\n", address + i, value, value);
+        cdcDevice.Send((uint8_t*)outputBuffer, strlen(outputBuffer));
+        icsp.SendCommand(ICSPCommand::IncrementAddress);
+    }
+    
+    icsp.SendCommand(ICSPCommand::ResetAddress);
+    uint16_t count = 0;
+    while (count <= 0x3FFF)
+    {
+        uint16_t value = icsp.Receive();
+        sprintf(outputBuffer, "0x%.8X: %d 0x%X\r\n", count, value, value);
+        cdcDevice.Send((uint8_t*)outputBuffer, strlen(outputBuffer));
+        icsp.SendCommand(ICSPCommand::IncrementAddress);
+
+        count++;
+    }
+    
+    icsp.ExitLVP();
+}
+
+void WriteData()
+{
+    cdcDevice.Send((uint8_t*)"In write", 8);
+}
+
+void SelectChip(uint8_t chip, uint8_t mode)
+{
+    if (chip == 101)
+    {
+        icsp.SelectKM(KeyManager::East);
+            
+        if (mode == 114)
+            GetKMData();
+        else if (mode == 119)
+            WriteData();
+    }
+        
+    else if (chip == 119)
+    {
+        icsp.SelectKM(KeyManager::West);
+        
+        if (mode == 114)
+            GetKMData();
+        else if (mode == 119)
+            WriteData();
+    }    
+}
+
+void GetInfo(volatile uint8_t* command, uint8_t i, uint8_t seqNo, uint8_t* fields, uint8_t size, uint8_t chip)
+{
+    uint8_t operation;
+    uint8_t sequenceNumber;
+    uint8_t crc;
+    uint8_t* ack;
+    uint8_t remoteCRC;
+    uint8_t* remoteOperation = (uint8_t*)"\x52";
+    
+    operation = command[0];
+    sequenceNumber = command[1];
+    crc = command[2];
+    
+    uint8_t check_crc = getCRC.GetCRC(fields, size - i);
+    
+    if (((int)sequenceNumber == seqNo) && (crc == check_crc))
+    {
+        ack = (uint8_t*)"\x1e\x41\x43\x4b\x04";
+        remoteCRC = getCRC.GetCRC(ack, 5);
+        remoteSequenceNo++;
+        
+        sprintf(outputBuffer, "%s%d%d%s\r\n", remoteOperation, remoteSequenceNo, remoteCRC, ack);
+        cdcDevice.Send((uint8_t*)outputBuffer, strlen(outputBuffer));
+            
+        if (sequenceNumber == 50)
+        {
+            SelectChip(chip, command[4]);
+        }
+    }
+}
+
+void ProcessCommand(volatile uint8_t* command, uint8_t size, uint8_t seqNo, uint8_t chip)
+{
+    if (seqNo < 51)
+    {
+        uint8_t i = 0;
+        uint8_t* fields;
+        
+        while (command[i] != '\x1e')
+        {
+            i++;
+        }
+
+        uint8_t* RS = (uint8_t*)&command[i];
+        fields = (uint8_t*)strstr((char*)command, (const char*)RS);
+        
+        GetInfo(command, i, seqNo, fields, size, chip);
+    }
+    
+    else
+    {
+        cdcDevice.Send((uint8_t*)command, size);
+    }
+}
+
+__attribute__(( weak )) void USBCallback(volatile uint8_t* command, uint8_t size, uint8_t seqNo, uint8_t chip)
+{
+    //sprintf(debugText, "|Callback|\r\n");
+    //cdcDevice.Send((uint8_t*)debugText, 12);
+    
+    ProcessCommand(command, size, seqNo, chip);
+}
+
 int main()
 {
-    USBCDCDevice cdcDevice;
-
+    
     Setup(display, cdcDevice);
-
+    
     CentralDB centralDB;
     CentralDBObserver lcdObserver(Attribute::ID::REMOTE_LCD_BRIGHTNESS, [](const CentralDB& db) {
         uint32_t backlightPercentage = db.GetUint32(Attribute::ID::REMOTE_LCD_BRIGHTNESS);
@@ -546,8 +670,10 @@ int main()
 
     // Set to 50% brightness as default for now
     // centralDB.SetUint32(Attribute::ID::REMOTE_LCD_BRIGHTNESS, 50);
-
+    
     display.SetBacklight(50);
+
+    cdcDevice.SetCallback(&USBCallback);
 
     MenuSystem menuSystem(&cdcDevice, &centralDB);
 
@@ -590,7 +716,7 @@ int main()
         menuSystem.Draw(painter);
 
         counter++;
-        sprintf(debugText, "%d\r\n", counter);
+        // sprintf(debugText, "%d\r\n", counter);
         painter->DrawText(3, 90, debugText, (uint16_t)Color565::Red, TextAlign::TEXT_ALIGN_LEFT, 0);
 
         // painter.DrawFillRoundRectangle(50, 120, 100, 40, 5, (uint16_t)Color565::Black);
@@ -608,7 +734,7 @@ int main()
         // painter.DrawCirlce(200, 90, (counter+12)%17, Color565::White);
         // painter.DrawCircleQuarter(50, 150, counter%15, 1, Color565::White);
 
-        // cdcDevice.Send((uint8_t*)debugText, 10);
+        // cdcDevice.Send((uint8_t*)debugText, 6);
 
         display.DisplayFramebuffer();
 

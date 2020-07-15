@@ -1,4 +1,4 @@
-#include "USBCDCDevice.h"
+    #include "USBCDCDevice.h"
 
 #include <xc.h>
 
@@ -25,7 +25,7 @@ volatile static uint8_t ep3data[EP3TXBUFFSIZE * 8]; // USB end point 3 data - US
 #define EP2RXBUFFSIZE 8                             // Also in multiples of 8
 volatile static uint8_t ep2data[EP2RXBUFFSIZE * 8]; // USB end point 2 data - USB FIFO size
 
-volatile static uint8_t *ep3ptr; // EP3 Transmit Data Pointer
+volatile static uint8_t* ep3ptr; // EP3 Transmit Data Pointer
 
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -43,8 +43,8 @@ volatile static uint8_t *ep3ptr; // EP3 Transmit Data Pointer
 #define BUF_SIZE 4096
 #define BUF_MASK (BUF_SIZE - 1)
 
-volatile uint8_t *ep0ptr; // EP0 Transmit Data Pointer
-volatile uint8_t *ep1ptr; // EP1 Transmit Data Pointer
+volatile uint8_t* ep0ptr; // EP0 Transmit Data Pointer
+volatile uint8_t* ep1ptr; // EP1 Transmit Data Pointer
 
 volatile uint8_t ep0data[EP0TXBUFFSIZE * 8]; // USB end point 0 data - USB FIFO size
 volatile uint8_t ep1data[EP1RXBUFFSIZE * 8]; // USB end point 1 data - USB FIFO size
@@ -63,26 +63,20 @@ const unsigned short string0[] = {
     0x0409       // wLANGID: English (US)
 };
 
-const unsigned short string1[] = {
-    STR_DESC(11), // bLength + bDescriptorType
-    'a', 'p', 'e', 'r', 't', 'u', 's', '.', 'o', 'r', 'g'};
+const unsigned short string1[] = {STR_DESC(11), // bLength + bDescriptorType
+                                  'a',          'p', 'e', 'r', 't', 'u', 's', '.', 'o', 'r', 'g'};
 
-const unsigned short string2[] = {
-    STR_DESC(12), // bLength + bDescriptorType
-    'A', 'X', 'I', 'O', 'M', ' ',
-    'R', 'e', 'm', 'o', 't', 'e'};
+const unsigned short string2[] = {STR_DESC(12), // bLength + bDescriptorType
+                                  'A',          'X', 'I', 'O', 'M', ' ', 'R', 'e', 'm', 'o', 't', 'e'};
 
-const unsigned short string3[] = {
-    STR_DESC(8), // bLength + bDescriptorType
-    'A', 'R', '0', '0', '0', '0', '0', '1'};
+const unsigned short string3[] = {STR_DESC(8), // bLength + bDescriptorType
+                                  'A',         'R', '0', '0', '0', '0', '0', '1'};
 
-const unsigned short string4[] = {
-    STR_DESC(7), // bLength + bDescriptorType
-    'D', 'e', 'f', 'a', 'u', 'l', 't'};
+const unsigned short string4[] = {STR_DESC(7), // bLength + bDescriptorType
+                                  'D',         'e', 'f', 'a', 'u', 'l', 't'};
 
-const unsigned short string5[] = {
-    STR_DESC(3), // bLength + bDescriptorType
-    'C', 'D', 'C'};
+const unsigned short string5[] = {STR_DESC(3), // bLength + bDescriptorType
+                                  'C', 'D', 'C'};
 
 void loop_ch(char ch)
 {
@@ -126,14 +120,14 @@ void buf_long(uint32_t val)
     buf_word(val);
 }
 
-void buf_str0(const char *str)
+void buf_str0(const char* str)
 {
     while (*str)
         buf_ch(*str++);
 }
 
-//static inline
-//void uart2_ch(char ch)
+// static inline
+// void uart2_ch(char ch)
 //{
 //    while(U2STAbits.UTXBF);
 //    U2TXREG = ch;
@@ -149,17 +143,12 @@ enum
     S_RXPKT
 };
 
-const char *sstr[] = {
-    [S_RESET] = "RE",
-    [S_IDLE] = "ID",
-    [S_TXPKT] = "TX",
-    [S_STATUS] = "ST",
-    [S_ZERO] = "ZE",
-    [S_RXPKT] = "RX"};
+const char* sstr[] = {
+    [S_RESET] = "RE", [S_IDLE] = "ID", [S_TXPKT] = "TX", [S_STATUS] = "ST", [S_ZERO] = "ZE", [S_RXPKT] = "RX"};
 
 volatile int ep0s;
 
-volatile uint8_t *ptr;
+volatile uint8_t* ptr;
 
 volatile uint16_t bmbRequest; // bmRequestType, bRequest
 
@@ -172,8 +161,8 @@ volatile uint8_t usb_conf;
 
 void usb_ep1_tx(void)
 {
-    volatile uint8_t *ep1fifo;
-    ep1fifo = (uint8_t *)&USBFIFO1; // for now 8 bits at a time.
+    volatile uint8_t* ep1fifo;
+    ep1fifo = (uint8_t*)&USBFIFO1; // for now 8 bits at a time.
 
     buf_str0("TX1\n");
     buf_ch('[');
@@ -207,7 +196,7 @@ void usb_ep2_rx()
     ep2rbc = USBE2CSR2bits.RXCNT; // Endpoint 2 - Received Bytes Count
 
     buf_ch('|');
-    ptr = (uint8_t *)&USBFIFO2;
+    ptr = (uint8_t*)&USBFIFO2;
     for (int i = 0; i < ep2rbc; i++)
     {
         ep2data[i] = ptr[i & 3];
@@ -221,8 +210,8 @@ void usb_ep2_rx()
 
 void usb_ep3_tx(void)
 {
-    volatile uint8_t *ep3fifo;
-    ep3fifo = (uint8_t *)&USBFIFO3; // for now 8 bits at a time.
+    volatile uint8_t* ep3fifo;
+    ep3fifo = (uint8_t*)&USBFIFO3; // for now 8 bits at a time.
 
     buf_str0("TX3\n");
     buf_ch('[');
@@ -251,25 +240,25 @@ void usb_ep3_tx(void)
     USBE3CSR0bits.TXPKTRDY = 1;
 }
 
-#define USB_EP0_TX(s)            \
-    do                           \
-    {                            \
-        ep0ptr = (uint8_t *)(s); \
-        ep0tbc = *ep0ptr;        \
+#define USB_EP0_TX(s)                                                                                                  \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        ep0ptr = (uint8_t*)(s);                                                                                        \
+        ep0tbc = *ep0ptr;                                                                                              \
     } while (0)
 
-#define USB_EP0_TXL(s, l)        \
-    do                           \
-    {                            \
-        ep0ptr = (uint8_t *)(s); \
-        ep0tbc = (l);            \
+#define USB_EP0_TXL(s, l)                                                                                              \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        ep0ptr = (uint8_t*)(s);                                                                                        \
+        ep0tbc = (l);                                                                                                  \
     } while (0)
 
-#define USB_EP3_TXL(s, l)        \
-    do                           \
-    {                            \
-        ep3ptr = (uint8_t *)(s); \
-        ep3tbc = (l);            \
+#define USB_EP3_TXL(s, l)                                                                                              \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        ep3ptr = (uint8_t*)(s);                                                                                        \
+        ep3tbc = (l);                                                                                                  \
     } while (0)
 
 int usb_ep0_ctrl_read(void)
@@ -460,22 +449,22 @@ int usb_ep0_zero(void)
     return ret;
 }
 
-#define EP0_STATE(s)          \
-    do                        \
-    {                         \
-        int next = (s);       \
-        buf_ch('{');          \
-        buf_str0(sstr[ep0s]); \
-        buf_str0("->");       \
-        buf_str0(sstr[next]); \
-        buf_ch('}');          \
-        ep0s = next;          \
+#define EP0_STATE(s)                                                                                                   \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        int next = (s);                                                                                                \
+        buf_ch('{');                                                                                                   \
+        buf_str0(sstr[ep0s]);                                                                                          \
+        buf_str0("->");                                                                                                \
+        buf_str0(sstr[next]);                                                                                          \
+        buf_ch('}');                                                                                                   \
+        ep0s = next;                                                                                                   \
     } while (0)
 
 int usb_ep0_tx(void)
 {
-    volatile uint8_t *ep0fifo;
-    ep0fifo = (uint8_t *)&USBFIFO0; // for now 8 bits at a time.
+    volatile uint8_t* ep0fifo;
+    ep0fifo = (uint8_t*)&USBFIFO0; // for now 8 bits at a time.
 
     buf_ch('[');
     buf_word(ep0tbc);
@@ -496,8 +485,7 @@ int usb_ep0_tx(void)
         buf_ch('+');
         USBE0CSR0bits.TXRDY = 1;
         return S_TXPKT;
-    }
-    else
+    } else
     { // last packet
         buf_ch('/');
         USBE0CSR0 |= _USBE0CSR0_TXRDY_MASK | _USBE0CSR0_DATAEND_MASK;
@@ -585,7 +573,7 @@ void usb_ep0(void)
     }
 
     buf_ch('|');
-    ptr = (uint8_t *)&USBFIFO0;
+    ptr = (uint8_t*)&USBFIFO0;
     for (int i = 0; i < ep0rbc; i++)
     {
         ep0data[i] = ptr[i & 3];
@@ -617,8 +605,7 @@ void usb_ep0(void)
                 // USBE0CSR0bits.DATAEND = 1;
                 EP0_STATE(S_ZERO);
                 return;
-            }
-            else
+            } else
             {
                 usb_ep0_stall();
                 return;
@@ -631,13 +618,11 @@ void usb_ep0(void)
             {
                 USBE0CSR0bits.RXRDYC = 1;
                 EP0_STATE(usb_ep0_tx());
-            }
-            else
+            } else
             {
                 usb_ep0_stall();
             }
-        }
-        else
+        } else
         { // control write
             USBE0CSR0bits.RXRDYC = 1;
             EP0_STATE(S_RXPKT);
@@ -733,55 +718,54 @@ void usb_reset(void)
     EP0_STATE(S_RESET);
 }
 
-# define my_sizeof(type) ((char *)(&type+1)-(char*)(&type))
+#define my_sizeof(type) ((char*)(&type + 1) - (char*)(&type))
 
-void ProcessCommand(volatile uint8_t *command, int size, USBCDCDevice& usbDevice)
+void USBCDCDevice::ProcessCommand(volatile uint8_t* command, int size)
 {
     uint8_t opr, seq_num[3], crc[2], fields[size - 7];
-    
-    for(int i = 0 ; i < size ; i++)
+
+    for (int i = 0; i < size; i++)
     {
-        if(command[i] == '1' && command[i + 1] == 'e')          // RS
+        if (command[i] == '1' && command[i + 1] == 'e') // RS
         {
             i++;
             continue;
         }
-        
-        else if(command[i] == '0' && command[i + 1] == '4')     // EOT
+
+        else if (command[i] == '0' && command[i + 1] == '4') // EOT
         {
             break;
         }
-        
-        else if(i < 1)                                          // Command : S or G
+
+        else if (i < 1) // Command : S or G
         {
             opr = command[i];
         }
-        
-        else if(i < 4)                                          // Sequence number
+
+        else if (i < 4) // Sequence number
         {
             seq_num[i - 1] = command[i];
         }
-        
-        else if(i < 6)                                          // CRC8
+
+        else if (i < 6) // CRC8
         {
             crc[i - 4] = command[i];
         }
-        
-        else                                                    // Fields
+
+        else // Fields
         {
             fields[i - 6] = command[i];
         }
-        
     }
     
-    usbDevice.Send((uint8_t*)"a", 3);
+    Send((uint8_t*)"ACK", 3);
 }
 
-void (*Callback)(volatile uint8_t *command, int size, USBCDCDevice& usbDevice) = nullptr;
+usbCallbackFunc usbCallback = nullptr;
 
-void SetCallback(void (*callback)(volatile uint8_t *command, int size, USBCDCDevice& usbDevice))
+void USBCDCDevice::SetCallback(usbCallbackFunc callback)
 {
-    Callback = callback;
+    usbCallback = callback;
 }
 
 extern "C" void __ISR(_USB_VECTOR, IPL7SRS) USB_ISR(void)
@@ -814,24 +798,29 @@ extern "C" void __ISR(_USB_VECTOR, IPL7SRS) USB_ISR(void)
     /* Endpoint 2 RX Interrupt Handler */
     if (csr1 & _USBCSR1_EP2RXIF_MASK)
     { // Endpoint 2 Receive
-        if(Callback != nullptr)
-        {   
-            usb_ep2_rx();
-            buf_ch('*');
-            buf_word(ep2rbc);
-            buf_ch('*');
-            /* for (int i=0; i<ep2rbc; i++)
-                loop_ch(ep2data[i]); */
-            loop_ch(ep2data[0]);
-            
-            int size = my_sizeof(ep2data)/my_sizeof(ep2data[0]);
-            
-            SetCallback(ProcessCommand);
-            USBCDCDevice usb;
-            Callback(ep2data, size, usb);
-        }
+        // if(Callback != nullptr)
+        //{
+        usb_ep2_rx();
+        buf_ch('*');
+        buf_word(ep2rbc);
+        buf_ch('*');
+        /* for (int i=0; i<ep2rbc; i++)
+            loop_ch(ep2data[i]); */
+        loop_ch(ep2data[0]);
+
+        if (usbCallback != nullptr)
+        {
+            //usbCallback(nullptr, 5);
         
-        Callback = nullptr;
+            int size = my_sizeof(ep2data)/my_sizeof(ep2data[0]);
+
+        //SetCallback(ProcessCommand);
+            usbCallback(ep2data, size);
+        //USBCDCDevice usb;
+        //Callback(ep2data, size, usb);
+        }
+
+        // Callback = nullptr;
     }
 
     /* Endpoint 3 TX Interrupt Handler */
@@ -882,20 +871,18 @@ void USBCDCDevice::Process()
         unsigned cnt = 0;
 
         while ((loop_ri != loop_wi) && (cnt < 16))
-            ep3data[cnt++] = loop[loop_ri++ & LOOP_MASK] + 1;
+            ep3data[cnt++] = loop[loop_ri++ & LOOP_MASK];
 
-        if (cnt)
+        /*if (cnt)
         {
-            ep3tbc = cnt;
-            ep3ptr = ep3data;
-            usb_ep3_tx();
-        }
+            Send((uint8_t*)ep3data, cnt);
+        }*/
     }
 }
 
-void USBCDCDevice::Send(uint8_t *data, uint16_t length)
+void USBCDCDevice::Send(uint8_t* data, uint16_t length)
 {
     ep3tbc = length;
     ep3ptr = data;
-    usb_ep3_tx();   
+    usb_ep3_tx();
 }

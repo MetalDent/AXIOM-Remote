@@ -50,24 +50,26 @@ def read_port(port):
     print(port.readline())
 
 def write_port(port, data):
+    #for i in data:
+    #    port.write(i.encode())
     port.write(data.encode())
 
 def BLCommand(port, chip_cmd, mode_cmd):
     write_port(port, chip_cmd)
-    read_port(port)
-    
-    '''
+    #read_port(port)
     ack = read_port(port)
     if ack == 'ACK':
-        write_port(port, mode)
+        print(ack)
+        '''
+        write_port(port, mode_cmd)
         ack = read_port(port)
         if ack == 'ACK':
             print('')   #send data
         else:
            sys.exit('Error!')
     else:
-        sys.exit('Error!') 
-    '''
+        sys.exit('Error!')
+    ''' 
 
 def parseFile(hexFile):
     ih = IntelHex16bit()
