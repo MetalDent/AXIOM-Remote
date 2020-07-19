@@ -12,6 +12,7 @@ import serial                           # connect to serial port
 import sys                              # sys.exit()
 import crc8                             # calculation of CRC8
 from curses import ascii                # values of RS and EOT
+import textwrap                         # to split string
 
 SequenceNum = {
     'seq_num' : 000
@@ -50,17 +51,16 @@ def read_port(port):
     print(port.readline())
 
 def write_port(port, data):
-    #for i in data:
-    #    port.write(i.encode())
-    port.write(data.encode())
+    data_split = textwrap.wrap(data, 8)
+    for i in data_split:
+        port.write(i.encode())
+    #port.write(data.encode())
 
 def BLCommand(port, chip_cmd, mode_cmd):
     write_port(port, chip_cmd)
-    #read_port(port)
     ack = read_port(port)
-    if ack == 'ACK':
-        print(ack)
-        '''
+    '''
+    if ack == 'ACK':   
         write_port(port, mode_cmd)
         ack = read_port(port)
         if ack == 'ACK':
