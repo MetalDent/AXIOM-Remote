@@ -48,21 +48,23 @@ def connect(p):
         sys.exit('Error! ' + str(e))
 
 def read_port(port):
-    print(port.readline())
+    return (port.readline())
 
 def write_port(port, data):
     data_split = textwrap.wrap(data, 8)
     for i in data_split:
         port.write(i.encode())
-    #port.write(data.encode())
 
 def BLCommand(port, chip_cmd, mode_cmd):
     write_port(port, chip_cmd)
     ack = read_port(port)
+    print(ack)
     '''
-    if ack == 'ACK':   
+    if ack.decode() == 'ACK':
+
         write_port(port, mode_cmd)
         ack = read_port(port)
+        print(ack)
         if ack == 'ACK':
             print('')   #send data
         else:

@@ -5,7 +5,7 @@
 
 #include "IUSBDevice.h"
 
-using usbCallbackFunc = void(*)(volatile uint8_t* command, int size);
+using usbCallbackFunc = void(*)(volatile uint8_t* command, int size, int seqNo);
 
 class USBCDCDevice : public IUSBDevice
 {
@@ -17,8 +17,6 @@ public:
     void Send(uint8_t *data, uint16_t length) override;
 
     void SetCallback(usbCallbackFunc callback);
-  
-    void ProcessCommand(volatile uint8_t* command, int size);
 };
 
 #endif //USBCDCDEVICE_H

@@ -718,48 +718,8 @@ void usb_reset(void)
     EP0_STATE(S_RESET);
 }
 
-#define my_sizeof(type) ((char*)(&type + 1) - (char*)(&type))
-
-void USBCDCDevice::ProcessCommand(volatile uint8_t* command, int size)
-{
-    uint8_t opr, seq_num[3], crc[2], fields[size - 7];
-
-    for (int i = 0; i < size; i++)
-    {
-        if (command[i] == '1' && command[i + 1] == 'e') // RS
-        {
-            i++;
-            continue;
-        }
-
-        else if (command[i] == '0' && command[i + 1] == '4') // EOT
-        {
-            break;
-        }
-
-        else if (i < 1) // Command : S or G
-        {
-            opr = command[i];
-        }
-
-        else if (i < 4) // Sequence number
-        {
-            seq_num[i - 1] = command[i];
-        }
-
-        else if (i < 6) // CRC8
-        {
-            crc[i - 4] = command[i];
-        }
-
-        else // Fields
-        {
-            fields[i - 6] = command[i];
-        }
-    }
-    
-    Send((uint8_t*)"ACK", 3);
-}
+uint8_t cmd[18], size = 0;
+int j = 0, seqNo = 0;
 
 usbCallbackFunc usbCallback = nullptr;
 
@@ -804,20 +764,22 @@ extern "C" void __ISR(_USB_VECTOR, IPL7SRS) USB_ISR(void)
         buf_ch('*');
         buf_word(ep2rbc);
         buf_ch('*');
-        /* for (int i=0; i<ep2rbc; i++)
-            loop_ch(ep2data[i]); */
-        loop_ch(ep2data[0]);
+        for (int i=0; i<ep2rbc; i++)
+            loop_ch(ep2data[i]);
+        //loop_ch(ep2data[0]);
+        
+        size += ep2rbc;
+        for(int i = 0; i < ep2rbc; i++)
+        {
+            cmd[j] = ep2data[i];
+            j++;
+        }
 
-        if (usbCallback != nullptr)
+        if (usbCallback != nullptr && j == 18)
         {
             //usbCallback(nullptr, 5);
-        
-            int size = my_sizeof(ep2data)/my_sizeof(ep2data[0]);
-
-        //SetCallback(ProcessCommand);
-            usbCallback(ep2data, size);
-        //USBCDCDevice usb;
-        //Callback(ep2data, size, usb);
+            seqNo++;
+            usbCallback(cmd, size, seqNo);
         }
 
         // Callback = nullptr;
