@@ -5,7 +5,7 @@
 
 #include "IUSBDevice.h"
 
-using usbCallbackFunc = void(*)(volatile uint8_t* command, int size, int seqNo);
+using usbCallbackFunc = void(*)(volatile uint8_t* command, uint8_t size, uint8_t seqNo);
 
 class USBCDCDevice : public IUSBDevice
 {

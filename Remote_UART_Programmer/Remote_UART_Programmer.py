@@ -43,7 +43,7 @@ def connect(p):
         port = serial.Serial(p, timeout=1)
         return port
     except serial.serialutil.SerialException:
-        print('SerialException ocurred!')
+        print('SerialException occurred!')
     except Exception as e:
         sys.exit('Error! ' + str(e))
 
@@ -61,7 +61,6 @@ def BLCommand(port, chip_cmd, mode_cmd):
     print(ack)
     '''
     if ack.decode() == 'ACK':
-
         write_port(port, mode_cmd)
         ack = read_port(port)
         print(ack)
@@ -90,12 +89,17 @@ def readCode(args):
     read_command = GetCommand(SequenceNum['seq_num'], 'S', read_fields)
     print(chip_command, read_command)
     BLCommand(port, chip_command, read_command)
+    port.close()
 
 def writeCode(args):
     print('In the write')
-    data = parseFile(args.hex)
     port = connect(args.port)
-    #BLCommand(port, Chip[args.chip], BootloaderCommands['write_mode'])
+    chip_fields = [args.chip]
+    read_fields = ['write_mode']
+    chip_command = GetCommand(SequenceNum['seq_num'], 'S', chip_fields)
+    write_command = GetCommand(SequenceNum['seq_num'], 'S', read_fields)
+    print(chip_command, read_command)
+    BLCommand(port, chip_command, write_command)
 
 def call(args):
     if args.version:

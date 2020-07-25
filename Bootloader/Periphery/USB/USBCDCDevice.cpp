@@ -718,8 +718,7 @@ void usb_reset(void)
     EP0_STATE(S_RESET);
 }
 
-uint8_t cmd[18], size = 0;
-int j = 0, seqNo = 0;
+uint8_t cmd[50], size = 0, j = 0, seqNo = 0;
 
 usbCallbackFunc usbCallback = nullptr;
 
@@ -768,14 +767,19 @@ extern "C" void __ISR(_USB_VECTOR, IPL7SRS) USB_ISR(void)
             loop_ch(ep2data[i]);
         //loop_ch(ep2data[0]);
         
+        if(ep2data[0] == 'S')
+        {
+            size = 0;
+            j = 0;
+        }
+        
         size += ep2rbc;
         for(int i = 0; i < ep2rbc; i++)
         {
-            cmd[j] = ep2data[i];
-            j++;
+            cmd[j++] = ep2data[i];
         }
 
-        if (usbCallback != nullptr && j == 18)
+        if (usbCallback != nullptr && ((cmd[size-2] == 'x') && (cmd[size-1] == '4')))
         {
             //usbCallback(nullptr, 5);
             seqNo++;
