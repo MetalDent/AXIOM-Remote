@@ -15,11 +15,11 @@ from curses import ascii                # values of RS and EOT
 import textwrap                         # to split string
 
 SequenceNum = {
-    'seq_num' : 000
+    'seq_num' : 0
 }
 
-RS = hex(ascii.RS)
-EOT = hex(ascii.EOT)
+RS = chr(ascii.RS)
+EOT = chr(ascii.EOT)
 
 def GetCommand(seq_num, command, fields):
     string = ''
@@ -29,13 +29,14 @@ def GetCommand(seq_num, command, fields):
     string += EOT
     
     seq_num += 1
-    seq_num = '{:03d}'.format(seq_num)
-    SequenceNum['seq_num'] = int(seq_num) 
+    SequenceNum['seq_num'] = seq_num 
      
     crc = crc8.crc8()
     crc.update(string.encode())
+    c = (crc.digest()).decode("ascii", "ignore")
          
-    final_command = command + seq_num + crc.hexdigest() + string
+    final_command = "{}{}{}{}".format(command, str(seq_num), c, string)
+    
     return final_command
 
 def connect(p):
@@ -50,20 +51,24 @@ def connect(p):
 def read_port(port):
     return (port.readline())
 
-def write_port(port, data):
-    data_split = textwrap.wrap(data, 8)
+def write_port(port, data):    
+    data_split = []
+    for i in range(0, len(data), 8):
+        data_split.append(data[0+i:8+i])
+        
     for i in data_split:
-        port.write(i.encode())
+        byte_data = bytearray(i.encode())
+        port.write(byte_data)
 
 def BLCommand(port, chip_cmd, mode_cmd):
     write_port(port, chip_cmd)
     ack = read_port(port)
     print(ack)
-    '''
     if ack.decode() == 'ACK':
         write_port(port, mode_cmd)
         ack = read_port(port)
         print(ack)
+    '''
         if ack == 'ACK':
             print('')   #send data
         else:
@@ -84,7 +89,7 @@ def readCode(args):
     print('In the read')
     port = connect(args.port)
     chip_fields = [args.chip]
-    read_fields = ['read_mode']
+    read_fields = ['read']
     chip_command = GetCommand(SequenceNum['seq_num'], 'S', chip_fields)
     read_command = GetCommand(SequenceNum['seq_num'], 'S', read_fields)
     print(chip_command, read_command)
@@ -95,7 +100,7 @@ def writeCode(args):
     print('In the write')
     port = connect(args.port)
     chip_fields = [args.chip]
-    read_fields = ['write_mode']
+    read_fields = ['write']
     chip_command = GetCommand(SequenceNum['seq_num'], 'S', chip_fields)
     write_command = GetCommand(SequenceNum['seq_num'], 'S', read_fields)
     print(chip_command, read_command)

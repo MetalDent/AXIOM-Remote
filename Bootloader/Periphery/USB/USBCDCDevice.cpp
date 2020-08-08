@@ -718,7 +718,10 @@ void usb_reset(void)
     EP0_STATE(S_RESET);
 }
 
-uint8_t cmd[50], size = 0, j = 0, seqNo = 0;
+uint8_t cmd[50];
+uint8_t size = 0;
+uint8_t j = 0;
+uint8_t seqNo = 48;
 
 usbCallbackFunc usbCallback = nullptr;
 
@@ -779,7 +782,7 @@ extern "C" void __ISR(_USB_VECTOR, IPL7SRS) USB_ISR(void)
             cmd[j++] = ep2data[i];
         }
 
-        if (usbCallback != nullptr && ((cmd[size-2] == 'x') && (cmd[size-1] == '4')))
+        if ((usbCallback != nullptr) && (cmd[size-1] == '\x04'))
         {
             //usbCallback(nullptr, 5);
             seqNo++;
