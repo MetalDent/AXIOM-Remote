@@ -15,27 +15,27 @@ from curses import ascii                # values of RS and EOT
 import textwrap                         # to split string
 
 SequenceNum = {
-    'seq_num' : 0
+    'sequenceNumber' : 0
 }
 
 RS = chr(ascii.RS)
 EOT = chr(ascii.EOT)
 
-def GetCommand(seq_num, command, fields):
+def GetCommand(sequenceNumber, command, fields):
     string = ''
     for val in fields:
         string += RS
         string += val
     string += EOT
     
-    seq_num += 1
-    SequenceNum['seq_num'] = seq_num 
+    sequenceNumber += 1
+    SequenceNum['sequenceNumber'] = sequenceNumber 
      
     crc = crc8.crc8()
     crc.update(string.encode())
     c = (crc.digest()).decode("ascii", "ignore")
          
-    final_command = "{}{}{}{}".format(command, str(seq_num), c, string)
+    final_command = "{}{}{}{}".format(command, str(sequenceNumber), c, string)
     
     return final_command
 
@@ -90,8 +90,8 @@ def readCode(args):
     port = connect(args.port)
     chip_fields = [args.chip]
     read_fields = ['read']
-    chip_command = GetCommand(SequenceNum['seq_num'], 'S', chip_fields)
-    read_command = GetCommand(SequenceNum['seq_num'], 'S', read_fields)
+    chip_command = GetCommand(SequenceNum['sequenceNumber'], 'S', chip_fields)
+    read_command = GetCommand(SequenceNum['sequenceNumber'], 'S', read_fields)
     print(chip_command, read_command)
     BLCommand(port, chip_command, read_command)
     port.close()
@@ -101,8 +101,8 @@ def writeCode(args):
     port = connect(args.port)
     chip_fields = [args.chip]
     read_fields = ['write']
-    chip_command = GetCommand(SequenceNum['seq_num'], 'S', chip_fields)
-    write_command = GetCommand(SequenceNum['seq_num'], 'S', read_fields)
+    chip_command = GetCommand(SequenceNum['sequenceNumber'], 'S', chip_fields)
+    write_command = GetCommand(SequenceNum['sequenceNumber'], 'S', read_fields)
     print(chip_command, read_command)
     BLCommand(port, chip_command, write_command)
 
