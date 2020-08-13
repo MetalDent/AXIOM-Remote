@@ -1,6 +1,3 @@
-#ifndef CRC8_H
-#define CRC8_H
-
 #include <stdint.h>
 
 class CRC8
@@ -53,5 +50,3 @@ class CRC8
     }
     
 };
-
-#endif // CRC8_H
