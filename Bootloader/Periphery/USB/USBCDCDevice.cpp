@@ -722,6 +722,7 @@ uint8_t cmd[50];
 uint8_t size = 0;
 uint8_t j = 0;
 uint8_t seqNo = 48;
+uint8_t chip;
 
 usbCallbackFunc usbCallback = nullptr;
 
@@ -782,11 +783,14 @@ extern "C" void __ISR(_USB_VECTOR, IPL7SRS) USB_ISR(void)
             cmd[j++] = ep2data[i];
         }
 
-        if ((usbCallback != nullptr) && (cmd[size-1] == '\x04'))
+        if ((usbCallback != nullptr) && ((cmd[size-1] == '\x04') || seqNo >= 50))
         {
             //usbCallback(nullptr, 5);
             seqNo++;
-            usbCallback(cmd, size, seqNo);
+            if (seqNo == 49)
+                chip = cmd[7];
+                
+            usbCallback(cmd, size, seqNo, chip);
         }
 
         // Callback = nullptr;

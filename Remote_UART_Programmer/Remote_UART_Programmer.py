@@ -33,9 +33,10 @@ def GetCommand(sequenceNumber, command, fields):
      
     crc = crc8.crc8()
     crc.update(string.encode())
-    c = (crc.digest()).decode("ascii", "ignore")
+    c = int(crc.hexdigest(), base=16)
          
-    final_command = "{}{}{}{}".format(command, str(sequenceNumber), c, string)
+    final_command = "{}{}{}{}".format(command, str(sequenceNumber), chr(c), string)
+    print(final_command)
     
     return final_command
 
@@ -47,35 +48,56 @@ def connect(p):
         print('SerialException occurred!')
     except Exception as e:
         sys.exit('Error! ' + str(e))
+        
+def toString(s):
+    string = ''
+    return (string.join(s))
 
 def read_port(port):
-    return (port.readline())
+    return (port.readlines())
 
 def write_port(port, data):    
     data_split = []
     for i in range(0, len(data), 8):
         data_split.append(data[0+i:8+i])
+    
+    if type(data) == str:
+        for i in data_split:
+            byte_data = bytearray(i.encode())
+            if len(byte_data) == 9:
+                byte_data = byte_data[:2] + byte_data[3:]            
+            port.write(byte_data)
+    
+    else:
+        for i in data_split:
+            stringData = toString(i)
+            print(stringData, len(stringData))
+            byte_data = bytearray(stringData.encode())
+            #print(byte_data, len(byte_data))
+            #port.write(byte_data)
         
-    for i in data_split:
-        byte_data = bytearray(i.encode())
-        port.write(byte_data)
-
-def BLCommand(port, chip_cmd, mode_cmd):
+def BLCommand(port, chip_cmd, mode_cmd, data = []):
     write_port(port, chip_cmd)
-    ack = read_port(port)
+    ack = port.readline()
     print(ack)
-    if ack.decode() == 'ACK':
+    if b'ACK' in ack:
+        print('ACK')
         write_port(port, mode_cmd)
-        ack = read_port(port)
-        print(ack)
-    '''
-        if ack == 'ACK':
-            print('')   #send data
+        if 'read' in mode_cmd:
+            data = read_port(port)
+            for d in data:
+                print(d)
+        elif 'write' in mode_cmd:
+            ack = port.readline()
+            print(ack)
+            if b'ACK' in ack:
+                print('ACK')
+            else:
+                sys.exit('Error!')    
         else:
-           sys.exit('Error!')
+            sys.exit('Error!')    
     else:
         sys.exit('Error!')
-    ''' 
 
 def parseFile(hexFile):
     ih = IntelHex16bit()
@@ -92,7 +114,6 @@ def readCode(args):
     read_fields = ['read']
     chip_command = GetCommand(SequenceNum['sequenceNumber'], 'S', chip_fields)
     read_command = GetCommand(SequenceNum['sequenceNumber'], 'S', read_fields)
-    print(chip_command, read_command)
     BLCommand(port, chip_command, read_command)
     port.close()
 
@@ -103,8 +124,11 @@ def writeCode(args):
     read_fields = ['write']
     chip_command = GetCommand(SequenceNum['sequenceNumber'], 'S', chip_fields)
     write_command = GetCommand(SequenceNum['sequenceNumber'], 'S', read_fields)
-    print(chip_command, read_command)
-    BLCommand(port, chip_command, write_command)
+    data = parseFile(args.hex)
+    dataList = []
+    for i in range(len(data)):
+        dataList.append(chr(data[i]))
+    #BLCommand(port, chip_command, write_command, dataList)
 
 def call(args):
     if args.version:
