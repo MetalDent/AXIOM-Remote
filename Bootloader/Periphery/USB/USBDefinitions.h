@@ -1,8 +1,6 @@
 #ifndef USBDEFINITIONS_H
 #define USBDEFINITIONS_H
 
-#include <sys/attribs.h>
-
 #define ASSERT(c) typedef char p__LINE__[(c)?1:-1]
 
 #define	TOTAL_LEN	0x43

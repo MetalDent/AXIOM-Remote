@@ -1,5 +1,5 @@
-#ifndef PIC32CONFIG_H
-#define	PIC32CONFIG_H
+#ifndef PIC32_CONFIG_H
+#define PIC32_CONFIG_H
 
 // DEVCFG0
 #pragma config BOOTISA = MIPS32
@@ -10,9 +10,9 @@
 #pragma config DBGPER = PG_ALL
 
 // DEVCFG1
-#pragma	config FDMTEN = OFF
+#pragma config FDMTEN = OFF
 #pragma config DMTCNT = DMT31
-#pragma	config FWDTEN = OFF
+#pragma config FWDTEN = OFF
 #pragma config POSCMOD = EC
 #pragma config OSCIOFNC = OFF
 #pragma config FSOSCEN = OFF
@@ -21,7 +21,7 @@
 
 // DEVCFG2
 /*	Clock Setup
-**	
+**
 **	24MHz External Oscillator
 **	PLL in = (24MHz/2) = 12MHz	[8-16MHz range]
 **	PLL freq = 12MHz*32 = 384MHz	[350MHz - 700MHz]
@@ -46,4 +46,4 @@
 // DEVCP0
 #pragma config CP = OFF
 
-#endif	/* PIC32CONFIG_H */
+#endif // PIC32_CONFIG_H

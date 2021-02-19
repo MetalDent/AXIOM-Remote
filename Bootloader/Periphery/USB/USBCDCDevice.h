@@ -1,8 +1,6 @@
 #ifndef USBCDCDEVICE_H
 #define USBCDCDEVICE_H
 
-#include <stdint.h>
-
 #include "IUSBDevice.h"
 
 class USBCDCDevice : public IUSBDevice
